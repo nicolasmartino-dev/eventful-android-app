@@ -1,0 +1,28 @@
+query EventDetails($id: ID!) {
+  eventById(id: $id) {
+    id
+    sourceId
+    sourceName
+    title
+    description
+    startTime
+    endTime
+    locationName
+    address
+    city
+    stateProvince
+    zipCode
+    country
+    geom
+    organizer
+    contactInfo
+    eventUrl
+    imageUrl
+    category
+    isFree
+    priceInfo
+    status
+    createdAt
+    updatedAt
+  }
+}

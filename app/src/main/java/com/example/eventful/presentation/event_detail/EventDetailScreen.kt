@@ -4,7 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -47,7 +47,7 @@ fun EventDetailScreen(
                     navigationIcon = {
                         IconButton(onClick = { navController.popBackStack() }) {
                             Icon(
-                                imageVector = Icons.Default.ArrowBack,
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                                 contentDescription = "Back to events"
                             )
                         }
@@ -88,11 +88,14 @@ fun EventDetailScreen(
                     text = event.startTime?.let { formatDateTime(it) } ?: "Date not available",
                     style = MaterialTheme.typography.bodyLarge
                 )
-                event.endTime?.let {
-                    Text(
-                        text = "to ${formatDateTime(it)}",
-                        style = MaterialTheme.typography.bodyLarge
-                    )
+                event.endTime?.let { endTime ->
+                    // Only show end time if it's different from start time
+                    if (endTime != event.startTime) {
+                        Text(
+                            text = "to ${formatDateTime(endTime)}",
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                    }
                 }
                 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -118,9 +121,14 @@ fun EventDetailScreen(
                         style = MaterialTheme.typography.bodyMedium
                     )
                 }
-                event.city?.let {
+                event.city?.let { city ->
+                    val locationText = if (event.stateProvince != null && event.stateProvince != "nan") {
+                        "$city, ${event.stateProvince}"
+                    } else {
+                        city
+                    }
                     Text(
-                        text = "$it, ${event.stateProvince ?: ""}",
+                        text = locationText,
                         style = MaterialTheme.typography.bodyMedium
                     )
                 }

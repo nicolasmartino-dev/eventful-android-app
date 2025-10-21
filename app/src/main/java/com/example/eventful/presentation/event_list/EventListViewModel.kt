@@ -4,9 +4,9 @@ import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.eventful.domain.repository.EventRepository
 import com.example.eventful.domain.usecase.GetEventsUseCase
-import com.example.eventful.util.Resource
+import com.example.eventful.domain.usecase.LoadMoreEventsUseCase
+import com.example.eventful.domain.model.Resource
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
@@ -15,7 +15,7 @@ import javax.inject.Inject
 @HiltViewModel
 class EventListViewModel @Inject constructor(
     private val getEventsUseCase: GetEventsUseCase,
-    private val eventRepository: EventRepository
+    private val loadMoreEventsUseCase: LoadMoreEventsUseCase
 ) : ViewModel() {
 
     private val _state = mutableStateOf(EventListState())
@@ -53,7 +53,7 @@ class EventListViewModel @Inject constructor(
 
         _state.value = _state.value.copy(isLoadingMore = true)
 
-        eventRepository.loadMoreEvents(
+        loadMoreEventsUseCase(
             offset = _state.value.currentOffset,
             limit = 20
         ).onEach { result ->

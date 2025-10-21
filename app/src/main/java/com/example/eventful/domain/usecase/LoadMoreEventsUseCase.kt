@@ -5,10 +5,10 @@ import com.example.eventful.domain.model.Resource
 import com.example.eventful.domain.repository.EventRepository
 import kotlinx.coroutines.flow.Flow
 
-class GetEventsUseCase(
+class LoadMoreEventsUseCase(
     private val repository: EventRepository
 ) {
-    operator fun invoke(): Flow<Resource<List<Event>>> {
-        return repository.getEvents()
+    operator fun invoke(offset: Int, limit: Int = 20): Flow<Resource<List<Event>>> {
+        return repository.loadMoreEvents(offset, limit)
     }
 }

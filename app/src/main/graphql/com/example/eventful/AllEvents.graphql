@@ -1,5 +1,5 @@
-query AllEvents {
-  allEvents {
+query AllEvents($limit: Int, $offset: Int) {
+  allEvents(limit: $limit, offset: $offset) {
     id
     sourceId
     sourceName

@@ -4,6 +4,7 @@ import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.eventful.domain.repository.EventRepository
 import com.example.eventful.domain.usecase.GetEventsUseCase
 import com.example.eventful.util.Resource
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -13,7 +14,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class EventListViewModel @Inject constructor(
-    private val getEventsUseCase: GetEventsUseCase
+    private val getEventsUseCase: GetEventsUseCase,
+    private val eventRepository: EventRepository
 ) : ViewModel() {
 
     private val _state = mutableStateOf(EventListState())
@@ -29,7 +31,8 @@ class EventListViewModel @Inject constructor(
                 is Resource.Success -> {
                     _state.value = state.value.copy(
                         events = it.data ?: emptyList(),
-                        isLoading = false
+                        isLoading = false,
+                        currentOffset = (it.data?.size ?: 0)
                     )
                 }
                 is Resource.Error -> {
@@ -40,6 +43,38 @@ class EventListViewModel @Inject constructor(
                 }
                 is Resource.Loading -> {
                     _state.value = state.value.copy(isLoading = true)
+                }
+            }
+        }.launchIn(viewModelScope)
+    }
+
+    fun loadMoreEvents() {
+        if (_state.value.isLoadingMore || !_state.value.hasMoreEvents) return
+
+        _state.value = _state.value.copy(isLoadingMore = true)
+
+        eventRepository.loadMoreEvents(
+            offset = _state.value.currentOffset,
+            limit = 20
+        ).onEach { result ->
+            when (result) {
+                is Resource.Success -> {
+                    val newEvents = result.data ?: emptyList()
+                    _state.value = _state.value.copy(
+                        events = _state.value.events + newEvents,
+                        isLoadingMore = false,
+                        currentOffset = _state.value.currentOffset + newEvents.size,
+                        hasMoreEvents = newEvents.size == 20 // If we got less than 20, no more events
+                    )
+                }
+                is Resource.Error -> {
+                    _state.value = _state.value.copy(
+                        isLoadingMore = false,
+                        error = result.message ?: "Failed to load more events"
+                    )
+                }
+                is Resource.Loading -> {
+                    // Keep isLoadingMore = true
                 }
             }
         }.launchIn(viewModelScope)

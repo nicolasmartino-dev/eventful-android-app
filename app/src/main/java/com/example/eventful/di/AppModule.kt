@@ -1,6 +1,6 @@
 package com.example.eventful.di
 
-import com.apollographql.apollo3.ApolloClient
+import com.apollographql.apollo.ApolloClient
 import com.example.eventful.data.local.EventDao
 import com.example.eventful.data.remote.ApolloClientProvider
 import com.example.eventful.data.repository.EventRepositoryImpl

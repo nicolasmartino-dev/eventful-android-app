@@ -1,6 +1,6 @@
 package com.example.eventful.data.remote
 
-import com.apollographql.apollo3.ApolloClient
+import com.apollographql.apollo.ApolloClient
 
 object ApolloClientProvider {
     private const val BASE_URL = "https://eventful-graphql-api-67457810649.us-central1.run.app/graphql"

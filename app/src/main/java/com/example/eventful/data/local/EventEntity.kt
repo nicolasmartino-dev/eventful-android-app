@@ -3,7 +3,6 @@ package com.example.eventful.data.local
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.example.eventful.domain.model.Event
-import java.util.Date
 
 @Entity(tableName = "events")
 data class EventEntity(
@@ -12,8 +11,8 @@ data class EventEntity(
     val sourceName: String?,
     val title: String,
     val description: String?,
-    val startTime: Date,
-    val endTime: Date?,
+    val startTime: String?,
+    val endTime: String?,
     val locationName: String?,
     val address: String?,
     val city: String?,
@@ -29,8 +28,8 @@ data class EventEntity(
     val isFree: Boolean?,
     val priceInfo: String?,
     val status: String?,
-    val createdAt: Date?,
-    val updatedAt: Date?
+    val createdAt: String?,
+    val updatedAt: String?
 ) {
     fun toEvent(): Event {
         return Event(

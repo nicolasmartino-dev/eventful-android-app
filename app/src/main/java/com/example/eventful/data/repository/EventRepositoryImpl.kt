@@ -1,9 +1,10 @@
 package com.example.eventful.data.repository
 
-import com.apollographql.apollo3.ApolloClient
-import com.example.eventful.AllEventsQuery
-import com.example.eventful.EventDetailsQuery
+import com.apollographql.apollo.ApolloClient
+import com.example.eventful.apollo.AllEventsQuery
+import com.example.eventful.apollo.EventDetailsQuery
 import com.example.eventful.data.local.EventDao
+import com.example.eventful.data.local.toEventEntity
 import com.example.eventful.data.remote.dto.toEvent
 import com.example.eventful.domain.model.Event
 import com.example.eventful.domain.repository.EventRepository
@@ -30,12 +31,13 @@ class EventRepositoryImpl @Inject constructor(
         }
 
         try {
-            val response = api.query(AllEventsQuery()).execute()
+            // Fetch first page with 10 events for faster initial load
+            val response = api.query(AllEventsQuery(limit = com.apollographql.apollo.api.Optional.present(10), offset = com.apollographql.apollo.api.Optional.present(0))).execute()
             if (response.hasErrors()) {
                 emit(Resource.Error(message = response.errors?.firstOrNull()?.message ?: "An unknown GraphQL error occurred"))
                 return@flow
             }
-            val remoteEvents = response.data?.allEvents?.map { it.toEvent() }
+            val remoteEvents = response.data?.allEvents?.mapNotNull { it?.toEvent() }
             if (remoteEvents != null) {
                 dao.clearEvents() // Clear old cache
                 dao.insertEvents(remoteEvents.map { it.toEventEntity() }) // Used toEventEntity()
@@ -47,6 +49,35 @@ class EventRepositoryImpl @Inject constructor(
             emit(Resource.Error("Couldn't reach server. Check your internet connection.", data = localEvents))
         } catch (e: Exception) {
             emit(Resource.Error("An unexpected error occurred: ${e.localizedMessage}", data = localEvents))
+        }
+    }
+
+    override fun loadMoreEvents(offset: Int, limit: Int): Flow<Resource<List<Event>>> = flow {
+        emit(Resource.Loading())
+
+        try {
+            val response = api.query(AllEventsQuery(
+                limit = com.apollographql.apollo.api.Optional.present(limit), 
+                offset = com.apollographql.apollo.api.Optional.present(offset)
+            )).execute()
+            
+            if (response.hasErrors()) {
+                emit(Resource.Error(message = response.errors?.firstOrNull()?.message ?: "An unknown GraphQL error occurred"))
+                return@flow
+            }
+            
+            val remoteEvents = response.data?.allEvents?.mapNotNull { it?.toEvent() }
+            if (remoteEvents != null) {
+                // Append to existing cache instead of clearing
+                dao.insertEvents(remoteEvents.map { it.toEventEntity() })
+                emit(Resource.Success(remoteEvents))
+            } else {
+                emit(Resource.Error(message = "No more events found."))
+            }
+        } catch (e: IOException) {
+            emit(Resource.Error("Couldn't reach server. Check your internet connection."))
+        } catch (e: Exception) {
+            emit(Resource.Error("An unexpected error occurred: ${e.localizedMessage}"))
         }
     }
 

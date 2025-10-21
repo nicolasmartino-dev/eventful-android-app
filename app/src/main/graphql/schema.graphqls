@@ -1,0 +1,39 @@
+type Query {
+  node(id: ID!): Node
+  allEvents(limit: Int, offset: Int): [Event]
+  eventById(id: ID!): Event
+}
+
+interface Node {
+  id: ID!
+}
+
+type Event implements Node {
+  id: ID!
+  sourceId: String
+  sourceName: String
+  title: String!
+  description: String
+  startTime: DateTime!
+  endTime: DateTime
+  locationName: String
+  address: String
+  city: String
+  stateProvince: String
+  zipCode: String
+  country: String
+  geom: String
+  organizer: String
+  contactInfo: String
+  eventUrl: String
+  imageUrl: String
+  category: String
+  isFree: Boolean
+  priceInfo: String
+  status: String
+  createdAt: DateTime
+  updatedAt: DateTime
+  extraData: String
+}
+
+scalar DateTime

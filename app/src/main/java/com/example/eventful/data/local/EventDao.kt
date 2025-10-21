@@ -10,7 +10,7 @@ import kotlinx.coroutines.flow.Flow
 interface EventDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertEvents(events: List<EventEntity>)
+    suspend fun insertEvents(events: List<EventEntity>): Unit
 
     @Query("SELECT * FROM events")
     fun getEvents(): Flow<List<EventEntity>>
@@ -19,5 +19,5 @@ interface EventDao {
     suspend fun getEventById(id: String): EventEntity?
 
     @Query("DELETE FROM events")
-    suspend fun clearEvents()
+    suspend fun clearEvents(): Unit
 }

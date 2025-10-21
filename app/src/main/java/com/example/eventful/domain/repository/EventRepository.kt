@@ -7,4 +7,5 @@ import kotlinx.coroutines.flow.Flow
 interface EventRepository {
     fun getEvents(): Flow<Resource<List<Event>>>
     fun getEventById(id: String): Flow<Resource<Event>>
+    fun loadMoreEvents(offset: Int, limit: Int = 20): Flow<Resource<List<Event>>>
 }

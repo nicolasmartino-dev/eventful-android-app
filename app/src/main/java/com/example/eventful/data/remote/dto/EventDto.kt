@@ -1,8 +1,9 @@
 package com.example.eventful.data.remote.dto
 
+import com.example.eventful.apollo.AllEventsQuery
+import com.example.eventful.apollo.EventDetailsQuery
 import com.example.eventful.domain.model.Event
-import com.example.eventful.AllEventsQuery
-import com.example.eventful.EventDetailsQuery
+
 import java.util.Date
 
 // Extension function to convert Apollo Date to Java Date (if needed, Apollo usually handles it)
@@ -13,57 +14,57 @@ import java.util.Date
 fun AllEventsQuery.AllEvent.toEvent(): Event {
     return Event(
         id = id,
-        sourceId = sourceId,
-        sourceName = sourceName,
+        sourceId = sourceId as? String,
+        sourceName = sourceName as? String,
         title = title,
-        description = description,
-        startTime = startTime as Date, // Assuming Apollo maps GraphQL DateTime to Java Date
-        endTime = endTime as Date?,    // Assuming Apollo maps GraphQL DateTime to Java Date
-        locationName = locationName,
-        address = address,
-        city = city,
-        stateProvince = stateProvince,
-        zipCode = zipCode,
-        country = country,
-        geom = geom,
-        organizer = organizer,
-        contactInfo = contactInfo,
-        eventUrl = eventUrl,
-        imageUrl = imageUrl,
-        category = category,
-        isFree = isFree,
-        priceInfo = priceInfo,
-        status = status,
-        createdAt = createdAt as Date?, // Assuming Apollo maps GraphQL DateTime to Java Date
-        updatedAt = updatedAt as Date?  // Assuming Apollo maps GraphQL DateTime to Java Date
+        description = description as? String,
+        startTime = startTime as? String, // Apollo returns DateTime as String
+        endTime = endTime as? String,    // Apollo returns DateTime as String
+        locationName = locationName as? String,
+        address = address as? String,
+        city = city as? String,
+        stateProvince = stateProvince as? String,
+        zipCode = zipCode as? String,
+        country = country as? String,
+        geom = geom as? String,
+        organizer = organizer as? String,
+        contactInfo = contactInfo as? String,
+        eventUrl = eventUrl as? String,
+        imageUrl = imageUrl as? String,
+        category = category as? String,
+        isFree = isFree as? Boolean,
+        priceInfo = priceInfo as? String,
+        status = status as? String,
+        createdAt = createdAt as? String, // Apollo returns DateTime as String
+        updatedAt = updatedAt as? String  // Apollo returns DateTime as String
     )
 }
 
 fun EventDetailsQuery.EventById.toEvent(): Event {
     return Event(
         id = id,
-        sourceId = sourceId,
-        sourceName = sourceName,
+        sourceId = sourceId as? String,
+        sourceName = sourceName as? String,
         title = title,
-        description = description,
-        startTime = startTime as Date, // Assuming Apollo maps GraphQL DateTime to Java Date
-        endTime = endTime as Date?,    // Assuming Apollo maps GraphQL DateTime to Java Date
-        locationName = locationName,
-        address = address,
-        city = city,
-        stateProvince = stateProvince,
-        zipCode = zipCode,
-        country = country,
-        geom = geom,
-        organizer = organizer,
-        contactInfo = contactInfo,
-        eventUrl = eventUrl,
-        imageUrl = imageUrl,
-        category = category,
-        isFree = isFree,
-        priceInfo = priceInfo,
-        status = status,
-        createdAt = createdAt as Date?, // Assuming Apollo maps GraphQL DateTime to Java Date
-        updatedAt = updatedAt as Date?  // Assuming Apollo maps GraphQL DateTime to Java Date
+        description = description as? String,
+        startTime = startTime as? String, // Apollo returns DateTime as String
+        endTime = endTime as? String,    // Apollo returns DateTime as String
+        locationName = locationName as? String,
+        address = address as? String,
+        city = city as? String,
+        stateProvince = stateProvince as? String,
+        zipCode = zipCode as? String,
+        country = country as? String,
+        geom = geom as? String,
+        organizer = organizer as? String,
+        contactInfo = contactInfo as? String,
+        eventUrl = eventUrl as? String,
+        imageUrl = imageUrl as? String,
+        category = category as? String,
+        isFree = isFree as? Boolean,
+        priceInfo = priceInfo as? String,
+        status = status as? String,
+        createdAt = createdAt as? String, // Apollo returns DateTime as String
+        updatedAt = updatedAt as? String  // Apollo returns DateTime as String
     )
 }

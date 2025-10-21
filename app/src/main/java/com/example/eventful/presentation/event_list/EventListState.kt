@@ -5,5 +5,8 @@ import com.example.eventful.domain.model.Event
 data class EventListState(
     val isLoading: Boolean = false,
     val events: List<Event> = emptyList(),
-    val error: String = ""
+    val error: String = "",
+    val isLoadingMore: Boolean = false,
+    val hasMoreEvents: Boolean = true,
+    val currentOffset: Int = 0
 )

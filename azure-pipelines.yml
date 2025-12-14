@@ -18,7 +18,7 @@ pr:
       - develop
 
 pool:
-  vmImage: 'macos-latest'  # Required for Android builds
+  name: 'MyMacAgent'  # Use self-hosted agent
 
 variables:
   - group: 'Eventful-Android-Secrets'  # Create this variable group in Azure DevOps

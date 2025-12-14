@@ -163,30 +163,30 @@ stages:
                 echo "=========================================="
 
           # Post Tophat link as PR comment (if PR)
-          - task: GitHubComment@0
-            displayName: 'Post Tophat Link in PR'
-            condition: and(succeeded(), eq(variables['Build.Reason'], 'PullRequest'))
-            inputs:
-              gitHubConnection: 'GitHub-Connection'  # Create this service connection
-              repositoryName: '$(Build.Repository.Name)'
-              issueNumber: '$(System.PullRequest.PullRequestNumber)'
-              comment: |
-                ## 📱 Build Complete - Install with Tophat
-                
-                Your Android build is ready! Install it on your device using Tophat:
-                
-                **[Install with Tophat]($(TOPHAT_URL))**
-                
-                Or copy this link:
-                ```
-                $(TOPHAT_URL)
-                ```
-                
-                **Build Details:**
-                - Build Number: $(Build.BuildNumber)
-                - Branch: $(Build.SourceBranchName)
-                - Commit: $(Build.SourceVersion)
-                - Build Time: $(Build.BuildId)
+          # - task: GitHubComment@0
+          #   displayName: 'Post Tophat Link in PR'
+          #   condition: and(succeeded(), eq(variables['Build.Reason'], 'PullRequest'))
+          #   inputs:
+          #     gitHubConnection: 'GitHub-Connection'  # Create this service connection
+          #     repositoryName: '$(Build.Repository.Name)'
+          #     issueNumber: '$(System.PullRequest.PullRequestNumber)'
+          #     comment: |
+          #       ## 📱 Build Complete - Install with Tophat
+          #       
+          #       Your Android build is ready! Install it on your device using Tophat:
+          #       
+          #       **[Install with Tophat]($(TOPHAT_URL))**
+          #       
+          #       Or copy this link:
+          #       ```
+          #       $(TOPHAT_URL)
+          #       ```
+          #       
+          #       **Build Details:**
+          #       - Build Number: $(Build.BuildNumber)
+          #       - Branch: $(Build.SourceBranchName)
+          #       - Commit: $(Build.SourceVersion)
+          #       - Build Time: $(Build.BuildId)
 
           # Run tests (optional)
           - task: Gradle@3

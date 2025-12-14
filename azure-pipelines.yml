@@ -1,0 +1,237 @@
+# Azure DevOps Pipeline for Eventful Android App
+# This pipeline builds the Android app and creates Tophat installation links
+
+trigger:
+  branches:
+    include:
+      - main
+      - develop
+  paths:
+    exclude:
+      - '*.md'
+      - 'docs/**'
+
+pr:
+  branches:
+    include:
+      - main
+      - develop
+
+pool:
+  vmImage: 'macos-latest'  # Required for Android builds
+
+variables:
+  - group: 'Eventful-Android-Secrets'  # Create this variable group in Azure DevOps
+  - name: 'buildConfiguration'
+    value: 'debug'  # Change to 'release' for production builds
+  - name: 'gradleVersion'
+    value: '8.13.0'
+  - name: 'javaVersion'
+    value: '11'
+
+stages:
+  - stage: Build
+    displayName: 'Build Android App'
+    jobs:
+      - job: BuildApp
+        displayName: 'Build APK'
+        steps:
+          # Checkout code
+          - checkout: self
+            fetchDepth: 0
+
+          # Setup Java
+          - task: JavaToolInstaller@0
+            displayName: 'Setup Java'
+            inputs:
+              versionSpec: '$(javaVersion)'
+              jdkArchitecture: 'x64'
+              jdkSource: 'PreInstalled'
+
+          # Setup Android SDK
+          - task: Gradle@3
+            displayName: 'Setup Android SDK'
+            inputs:
+              workingDirectory: '$(System.DefaultWorkingDirectory)'
+              gradleWrapperFile: '$(System.DefaultWorkingDirectory)/gradlew'
+              options: '--no-daemon'
+              tasks: 'tasks'
+
+          # Create local.properties with Google Maps API Key
+          - task: Bash@3
+            displayName: 'Create local.properties'
+            inputs:
+              targetType: 'inline'
+              script: |
+                echo "Creating local.properties file..."
+                echo "GOOGLE_MAPS_API_KEY=$(GOOGLE_MAPS_API_KEY)" > local.properties
+                echo "sdk.dir=$(ANDROID_HOME)" >> local.properties
+                cat local.properties
+
+          # Build Debug APK
+          - task: Gradle@3
+            displayName: 'Build Debug APK'
+            inputs:
+              workingDirectory: '$(System.DefaultWorkingDirectory)'
+              gradleWrapperFile: '$(System.DefaultWorkingDirectory)/gradlew'
+              options: '--no-daemon --stacktrace'
+              tasks: 'assembleDebug'
+              publishJUnitResults: false
+
+          # Publish APK as artifact
+          - task: PublishBuildArtifacts@1
+            displayName: 'Publish APK Artifact'
+            inputs:
+              pathToPublish: '$(System.DefaultWorkingDirectory)/app/build/outputs/apk/debug'
+              artifactName: 'app-debug'
+              publishLocation: 'Container'
+
+          # Upload APK to Azure Storage (for Tophat)
+          - task: AzureCLI@2
+            displayName: 'Upload APK to Azure Storage'
+            condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+            inputs:
+              azureSubscription: 'Azure-Service-Connection'  # Create this service connection
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                # Variables
+                STORAGE_ACCOUNT_NAME="$(STORAGE_ACCOUNT_NAME)"
+                STORAGE_CONTAINER="android-builds"
+                APK_FILE="app-debug.apk"
+                BUILD_NUMBER="$(Build.BuildNumber)"
+                BRANCH_NAME=$(echo "$(Build.SourceBranchName)" | tr '/' '-')
+                
+                # Upload APK
+                az storage blob upload \
+                  --account-name "$STORAGE_ACCOUNT_NAME" \
+                  --container-name "$STORAGE_CONTAINER" \
+                  --name "$BRANCH_NAME/$BUILD_NUMBER/$APK_FILE" \
+                  --file "$(System.DefaultWorkingDirectory)/app/build/outputs/apk/debug/app-debug.apk" \
+                  --overwrite
+                
+                # Generate public URL (with SAS token for security)
+                EXPIRY=$(date -u -d '+30 days' +%Y-%m-%dT%H:%M:%SZ)
+                SAS_TOKEN=$(az storage blob generate-sas \
+                  --account-name "$STORAGE_ACCOUNT_NAME" \
+                  --container-name "$STORAGE_CONTAINER" \
+                  --name "$BRANCH_NAME/$BUILD_NUMBER/$APK_FILE" \
+                  --permissions r \
+                  --expiry "$EXPIRY" \
+                  --output tsv)
+                
+                APK_URL="https://$STORAGE_ACCOUNT_NAME.blob.core.windows.net/$STORAGE_CONTAINER/$BRANCH_NAME/$BUILD_NUMBER/$APK_FILE?$SAS_TOKEN"
+                
+                echo "##vso[task.setvariable variable=APK_URL]$APK_URL"
+                echo "APK URL: $APK_URL"
+
+          # Generate Tophat Link
+          - task: Bash@3
+            displayName: 'Generate Tophat Installation Link'
+            condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+            inputs:
+              targetType: 'inline'
+              script: |
+                APK_URL="$(APK_URL)"
+                
+                if [ -z "$APK_URL" ]; then
+                  echo "APK_URL not set, skipping Tophat link generation"
+                  exit 0
+                fi
+                
+                # Generate Tophat URL
+                # Format: tophat://install/http?url=<encoded_url>
+                TOPHAT_URL="tophat://install/http?url=$(echo "$APK_URL" | sed 's/&/%26/g' | sed 's/#/%23/g')"
+                
+                echo "##vso[task.setvariable variable=TOPHAT_URL]$TOPHAT_URL"
+                echo "##vso[task.setvariable variable=TOPHAT_URL;isOutput=true]$TOPHAT_URL"
+                
+                # Also create HTTP version for GitHub/PR comments
+                HTTP_TOPHAT_URL="http://localhost:29070/install/http?url=$(echo "$APK_URL" | sed 's/&/%26/g' | sed 's/#/%23/g')"
+                echo "##vso[task.setvariable variable=HTTP_TOPHAT_URL]$HTTP_TOPHAT_URL"
+                
+                echo "=========================================="
+                echo "📱 TOPHAT INSTALLATION LINK"
+                echo "=========================================="
+                echo ""
+                echo "Install with Tophat:"
+                echo "$TOPHAT_URL"
+                echo ""
+                echo "Or use HTTP version (for GitHub/PRs):"
+                echo "$HTTP_TOPHAT_URL"
+                echo ""
+                echo "=========================================="
+
+          # Post Tophat link as PR comment (if PR)
+          - task: GitHubComment@0
+            displayName: 'Post Tophat Link in PR'
+            condition: and(succeeded(), eq(variables['Build.Reason'], 'PullRequest'))
+            inputs:
+              gitHubConnection: 'GitHub-Connection'  # Create this service connection
+              repositoryName: '$(Build.Repository.Name)'
+              issueNumber: '$(System.PullRequest.PullRequestNumber)'
+              comment: |
+                ## 📱 Build Complete - Install with Tophat
+                
+                Your Android build is ready! Install it on your device using Tophat:
+                
+                **[Install with Tophat]($(TOPHAT_URL))**
+                
+                Or copy this link:
+                ```
+                $(TOPHAT_URL)
+                ```
+                
+                **Build Details:**
+                - Build Number: $(Build.BuildNumber)
+                - Branch: $(Build.SourceBranchName)
+                - Commit: $(Build.SourceVersion)
+                - Build Time: $(Build.BuildId)
+
+          # Run tests (optional)
+          - task: Gradle@3
+            displayName: 'Run Unit Tests'
+            inputs:
+              workingDirectory: '$(System.DefaultWorkingDirectory)'
+              gradleWrapperFile: '$(System.DefaultWorkingDirectory)/gradlew'
+              options: '--no-daemon'
+              tasks: 'testDebugUnitTest'
+              publishJUnitResults: true
+              testResultsFiles: '**/TEST-*.xml'
+
+          # Code coverage (optional)
+          - task: Gradle@3
+            displayName: 'Generate Code Coverage'
+            inputs:
+              workingDirectory: '$(System.DefaultWorkingDirectory)'
+              gradleWrapperFile: '$(System.DefaultWorkingDirectory)/gradlew'
+              options: '--no-daemon'
+              tasks: 'jacocoTestReport'
+            continueOnError: true
+
+  - stage: Lint
+    displayName: 'Code Quality Checks'
+    jobs:
+      - job: LintCheck
+        displayName: 'Run Lint'
+        steps:
+          - checkout: self
+          
+          - task: Gradle@3
+            displayName: 'Run Android Lint'
+            inputs:
+              workingDirectory: '$(System.DefaultWorkingDirectory)'
+              gradleWrapperFile: '$(System.DefaultWorkingDirectory)/gradlew'
+              options: '--no-daemon'
+              tasks: 'lintDebug'
+            continueOnError: true
+
+          - task: PublishBuildArtifacts@1
+            displayName: 'Publish Lint Results'
+            inputs:
+              pathToPublish: '$(System.DefaultWorkingDirectory)/app/build/reports/lint-results-debug.html'
+              artifactName: 'lint-results'
+              publishLocation: 'Container'
+            condition: always()
+
+

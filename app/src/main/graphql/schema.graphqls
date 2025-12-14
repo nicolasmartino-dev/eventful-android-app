@@ -22,7 +22,7 @@ type Event implements Node {
   stateProvince: String
   zipCode: String
   country: String
-  geom: String
+  geom: JSON
   organizer: String
   contactInfo: String
   eventUrl: String
@@ -37,3 +37,4 @@ type Event implements Node {
 }
 
 scalar DateTime
+scalar JSON

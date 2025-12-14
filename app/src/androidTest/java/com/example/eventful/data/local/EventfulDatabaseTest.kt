@@ -3,18 +3,19 @@ package com.example.eventful.data.local
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.example.eventful.TestHelpers.createTestEvent
 import com.example.eventful.data.mapper.EventMapper
 import com.example.eventful.domain.model.Event
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.After
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import kotlin.test.assertEquals
-import kotlin.test.assertNotNull
-import kotlin.test.assertNull
-import kotlin.test.assertTrue
 
 @RunWith(AndroidJUnit4::class)
 class EventfulDatabaseTest {
@@ -40,13 +41,13 @@ class EventfulDatabaseTest {
     fun insertAndGetEvents() = runTest {
         // Given
         val events = listOf(
-            Event(
+            createTestEvent(
                 id = "1",
                 title = "Test Event 1",
                 startTime = "2024-01-01T10:00:00Z",
                 description = "Test Description 1"
             ),
-            Event(
+            createTestEvent(
                 id = "2",
                 title = "Test Event 2",
                 startTime = "2024-01-02T10:00:00Z",
@@ -68,7 +69,7 @@ class EventfulDatabaseTest {
     @Test
     fun insertAndGetEventById() = runTest {
         // Given
-        val event = Event(
+        val event = createTestEvent(
             id = "test-id",
             title = "Test Event",
             startTime = "2024-01-01T10:00:00Z",
@@ -98,8 +99,8 @@ class EventfulDatabaseTest {
     fun clearEventsRemovesAllEvents() = runTest {
         // Given
         val events = listOf(
-            Event(id = "1", title = "Event 1", startTime = "2024-01-01T10:00:00Z"),
-            Event(id = "2", title = "Event 2", startTime = "2024-01-02T10:00:00Z")
+            createTestEvent(id = "1", title = "Event 1", startTime = "2024-01-01T10:00:00Z"),
+            createTestEvent(id = "2", title = "Event 2", startTime = "2024-01-02T10:00:00Z")
         )
         val eventEntities = events.map { EventMapper.run { it.toEventEntity() } }
         eventDao.insertEvents(eventEntities)
@@ -115,13 +116,13 @@ class EventfulDatabaseTest {
     @Test
     fun insertEventsWithSameIdReplacesExisting() = runTest {
         // Given
-        val originalEvent = Event(
+        val originalEvent = createTestEvent(
             id = "1",
             title = "Original Event",
             startTime = "2024-01-01T10:00:00Z",
             description = "Original Description"
         )
-        val updatedEvent = Event(
+        val updatedEvent = createTestEvent(
             id = "1",
             title = "Updated Event",
             startTime = "2024-01-01T10:00:00Z",

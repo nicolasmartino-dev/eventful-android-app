@@ -9,6 +9,8 @@ A modern Android application built with Jetpack Compose that provides a seamless
 - **Infinite Scrolling**: Seamlessly load more events as you scroll
 - **Fast Initial Load**: Optimized to show content quickly (10 events initially)
 - **Event Details**: Comprehensive event information with formatted dates and locations
+- **Map Preview**: Interactive Google Maps preview showing event location
+- **Smart Location Display**: Intelligent location prioritization (venue name → address → city → coordinates)
 - **Navigation**: Smooth navigation between event list and detail screens
 
 ### Performance Optimizations
@@ -111,6 +113,33 @@ The app follows **Clean Architecture** principles with clear separation of conce
 - **JDK**: Version 11 or later
 - **Android SDK**: API level 24+ (Android 7.0)
 - **Gradle**: Version 8.13.0
+- **Google Maps API Key**: For map preview functionality
+
+### Google Maps Setup
+To enable the map preview feature in event details:
+
+1. **Get a Google Maps API Key**:
+   - Go to [Google Cloud Console](https://console.cloud.google.com/)
+   - Create a new project or select an existing one
+   - Enable the "Maps SDK for Android" API
+   - Create credentials (API Key)
+   - Restrict the API key to your app's package name and SHA-1 fingerprint
+
+2. **Configure the API Key**:
+   - Open `local.properties` in the project root
+   - Add your API key:
+   ```properties
+   GOOGLE_MAPS_API_KEY=your_actual_api_key_here
+   ```
+
+3. **Update API Key Restrictions**:
+   - Package name: `com.eventful.app`
+   - SHA-1 fingerprint: `1E:DE:DB:B4:8E:E5:A1:52:03:04:19:4C:F6:DE:6B:D5:EA:9B:4C:66`
+
+4. **Security Note**: 
+   - Never commit your actual API key to version control
+   - The `local.properties` file is already in `.gitignore`
+   - Consider using environment variables for CI/CD pipelines
 
 ### Build Configuration
 ```gradle
@@ -296,6 +325,38 @@ query EventDetails($id: ID!) {
 - **Network Efficiency**: Reduced data transfer with pagination
 
 ## 🔮 Future Enhancements
+
+## 🆕 Recent Updates
+
+### GeoJSON Integration (Latest Update)
+**Enhanced Location Handling**: Migrated from WKT to GeoJSON format for better mobile integration:
+
+#### **What Changed**:
+- **Before**: `geom` field was a WKT string: `"POINT(-73.5673 45.5017)"`
+- **After**: `geom` field is a GeoJSON object: `{"type": "Point", "coordinates": [-73.5673, 45.5017]}`
+
+#### **Benefits**:
+- ✅ **Native JSON Parsing**: Direct parsing without complex regex operations
+- ✅ **Type Safety**: Structured data with proper coordinate extraction
+- ✅ **Performance**: Faster parsing and processing
+- ✅ **Future-Ready**: Support for complex geometries (polygons, linestrings)
+- ✅ **Standards Compliant**: RFC 7946 GeoJSON standard
+
+#### **Implementation Details**:
+```kotlin
+data class Geometry(
+    val type: String,
+    val coordinates: List<Double>
+) {
+    val latitude: Double? get() = if (coordinates.size >= 2) coordinates[1] else null
+    val longitude: Double? get() = if (coordinates.size >= 2) coordinates[0] else null
+}
+```
+
+#### **Backward Compatibility**:
+- **Fallback Support**: Still handles old WKT format during transition
+- **Graceful Degradation**: Returns null for invalid geometry data
+- **Error Handling**: Robust parsing with exception handling
 
 ### Planned Features
 - **Search Functionality**: Filter events by title, category, location

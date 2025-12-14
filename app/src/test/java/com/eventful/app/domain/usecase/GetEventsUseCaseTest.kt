@@ -1,0 +1,76 @@
+package com.eventful.app.domain.usecase
+
+import com.eventful.app.TestHelpers.createTestEvent
+import com.eventful.app.domain.model.Event
+import com.eventful.app.domain.model.Resource
+import com.eventful.app.domain.repository.EventRepository
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.test.runTest
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
+import org.junit.Before
+import org.junit.Test
+import org.mockito.Mock
+import org.mockito.MockitoAnnotations
+import org.mockito.kotlin.whenever
+
+class GetEventsUseCaseTest {
+
+    @Mock
+    private lateinit var repository: EventRepository
+
+    private lateinit var getEventsUseCase: GetEventsUseCase
+
+    @Before
+    fun setup() {
+        MockitoAnnotations.openMocks(this)
+        getEventsUseCase = GetEventsUseCase(repository)
+    }
+
+    @Test
+    fun `invoke should return success when repository returns success`() = runTest {
+        // Given
+        val mockEvents = listOf(
+            createTestEvent(id = "1", title = "Test Event 1", startTime = "2024-01-01T10:00:00Z"),
+            createTestEvent(id = "2", title = "Test Event 2", startTime = "2024-01-02T10:00:00Z")
+        )
+        val expectedResult = Resource.Success(mockEvents)
+        whenever(repository.getEvents()).thenReturn(flowOf(expectedResult))
+
+        // When
+        val result = getEventsUseCase().first()
+
+        // Then
+        assertTrue(result is Resource.Success)
+        assertEquals(mockEvents, (result as Resource.Success).data)
+    }
+
+    @Test
+    fun `invoke should return error when repository returns error`() = runTest {
+        // Given
+        val errorMessage = "Network error"
+        val expectedResult = Resource.Error(Throwable(errorMessage))
+        whenever(repository.getEvents()).thenReturn(flowOf(expectedResult))
+
+        // When
+        val result = getEventsUseCase().first()
+
+        // Then
+        assertTrue(result is Resource.Error)
+        assertEquals(errorMessage, (result as Resource.Error).exception.message)
+    }
+
+    @Test
+    fun `invoke should return loading when repository returns loading`() = runTest {
+        // Given
+        val expectedResult = Resource.Loading
+        whenever(repository.getEvents()).thenReturn(flowOf(expectedResult))
+
+        // When
+        val result = getEventsUseCase().first()
+
+        // Then
+        assertTrue(result is Resource.Loading)
+    }
+}

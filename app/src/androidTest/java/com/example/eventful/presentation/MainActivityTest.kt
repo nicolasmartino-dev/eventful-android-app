@@ -25,7 +25,8 @@ class MainActivityTest {
             }
         }
 
-        // Then
+        // Then - Check for loading indicator or empty state
+        // Since we don't have real data in tests, we check for basic UI elements
         composeTestRule.onNodeWithText("Event Details").assertIsDisplayed()
     }
 
